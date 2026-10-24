@@ -1,0 +1,160 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.login-wrapper {
+  width: 100vw;
+  height: 100vh;
+  /* Uses your uploaded mock image as full background background */
+  background: url('../assets/images/zeus_globe.jpg.png') no-repeat center center/cover;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* Pushes form to the right side */
+  padding-right: 8%;
+}
+
+.login-card {
+  width: 420px;
+  background: rgba(235, 236, 240, 0.92);
+  border-radius: 4px;
+  padding: 40px 35px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #333;
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 1px;
+  margin-bottom: 25px;
+}
+
+.menu-icon {
+  font-size: 18px;
+}
+
+.user-icon-circle {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: #d8dbe2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 30px auto;
+}
+
+.user-avatar {
+  width: 45px;
+  height: 45px;
+  stroke: #888e9e;
+}
+
+.login-error {
+  color: #e74c3c;
+  font-size: 12px;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.input-field {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.input-field input {
+  width: 100%;
+  padding: 14px 45px 14px 20px;
+  background: #e6e8ee;
+  border: none;
+  border-radius: 25px;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: #333;
+  outline: none;
+}
+
+.input-field input::placeholder {
+  color: #777;
+}
+
+.field-icon {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  color: #555;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #555;
+  margin: 20px 5px 30px 5px;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.forgot-link {
+  color: #555;
+  text-decoration: none;
+}
+
+.login-submit-btn {
+  width: 60%;
+  margin: 0 auto;
+  display: block;
+  padding: 12px;
+  background: #73629b;
+  color: #fff;
+  border: none;
+  border-radius: 25px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.login-submit-btn:hover {
+  background: #5e4e83;
+}
+
+.signup-prompt {
+  margin-top: 35px;
+  text-align: center;
+  font-size: 13px;
+  color: #6a578c;
+}
+
+.signup-prompt p {
+  margin-bottom: 5px;
+}
+
+.signup-prompt a {
+  color: #6a578c;
+  font-weight: 600;
+  text-decoration: none;
+}
