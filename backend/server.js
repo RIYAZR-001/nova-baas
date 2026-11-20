@@ -18,9 +18,24 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretnova_key_2026';
 
-// 1. CORS Configuration
+// 1. CORS Configuration (Allows local dev + any hosted frontend via FRONTEND_URL or wildcard fallback)
+const allowedOrigins = [
+  'http://localhost',
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:8080',
+  'http://127.0.0.1:8080',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
 app.use(cors({
-  origin: ['http://localhost', 'http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:5173'],
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin) || process.env.ALLOW_ALL_ORIGINS === 'true') {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true
 }));
 
@@ -95,7 +110,12 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Interactive Swagger Docs UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-// Health Check Endpoint
+// Lightweight Keep-Alive Route (No DB query — use this URL in UptimeRobot)
+app.get('/api/ping', (req, res) => {
+  res.status(200).json({ status: 'ok', service: 'NOVA BaaS Engine' });
+});
+
+// Health Check Endpoint (Verifies DB connectivity)
 app.get('/api/health', async (req, res) => {
   try {
     const dbResult = await pool.query('SELECT NOW()');
@@ -190,6 +210,6 @@ app.use('/api/keys', apiKeyRouter);
 app.use('/api/storage', storageRouter);
 
 app.listen(PORT, () => {
-  console.log(`[NOVA] Hardened Server running on http://localhost:${PORT}`);
-  console.log(`[NOVA] Swagger API Docs running on http://localhost:${PORT}/api-docs`);
+  console.log(`[NOVA] Hardened Server running on port ${PORT}`);
+  console.log(`[NOVA] Swagger API Docs running on /api-docs`);
 });

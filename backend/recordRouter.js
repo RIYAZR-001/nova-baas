@@ -77,7 +77,7 @@ router.get('/:entity', authenticateToken, checkRole(['admin', 'developer', 'view
     const countResult = await pool.query(countQuery, queryParams);
     const totalRecords = parseInt(countResult.rows[0].count, 10);
 
-    // 2. Fetch paginated records
+    // 2. Fetch paginated records (Fixed template literal syntax here)
     queryParams.push(limit, offset);
     const dataQuery = `
       SELECT * FROM records 
