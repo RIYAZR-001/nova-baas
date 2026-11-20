@@ -52,9 +52,11 @@ router.get('/:entity', authenticateToken, checkRole(['admin', 'developer', 'view
   const { entity } = req.params;
   const userId = req.user?.id || req.user?.userId || req.user?.sub;
 
-  // Extract query parameters for pagination, searching, and sorting
-  const page = parseInt(req.query.page, 10) || 1;
-  const limit = parseInt(req.query.limit, 10) || 10;
+  // Extract and clamp query parameters for pagination, searching, and sorting
+  const rawPage = parseInt(req.query.page, 10);
+  const rawLimit = parseInt(req.query.limit, 10);
+  const page = Number.isNaN(rawPage) ? 1 : Math.max(1, rawPage);
+  const limit = Number.isNaN(rawLimit) ? 10 : Math.min(100, Math.max(1, rawLimit));
   const search = req.query.search || '';
   const order = (req.query.order || 'DESC').toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
   const offset = (page - 1) * limit;
@@ -77,7 +79,7 @@ router.get('/:entity', authenticateToken, checkRole(['admin', 'developer', 'view
     const countResult = await pool.query(countQuery, queryParams);
     const totalRecords = parseInt(countResult.rows[0].count, 10);
 
-    // 2. Fetch paginated records (Fixed template literal syntax here)
+    // 2. Fetch paginated records
     queryParams.push(limit, offset);
     const dataQuery = `
       SELECT * FROM records 
@@ -153,7 +155,7 @@ router.put('/:entity/:id', authenticateToken, checkRole(['admin', 'developer']),
   try {
     const queryText = `
       UPDATE records
-      SET data = $1
+      SET data = $1, updated_at = NOW()
       WHERE id = $2
       RETURNING *;
     `;
