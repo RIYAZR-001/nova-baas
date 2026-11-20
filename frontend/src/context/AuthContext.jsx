@@ -3,7 +3,6 @@ import API from '../api/axios';
 
 export const AuthContext = createContext();
 
-// Custom hook to easily consume AuthContext
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
@@ -12,25 +11,34 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
+    const savedUser = localStorage.getItem('nova_user');
     if (token) {
-      setUser({ token });
+      try {
+        const parsedUser = savedUser ? JSON.parse(savedUser) : {};
+        setUser({ token, ...parsedUser });
+      } catch {
+        setUser({ token });
+      }
     }
     setLoading(false);
   }, []);
 
   const login = async (email, password) => {
-    // Uses the API instance which handles http://localhost:5000/api
     const { data } = await API.post('/auth/login', { email, password });
-    
+
     if (data.token) {
       localStorage.setItem('token', data.token);
-      setUser({ token: data.token, ...data.user });
+      if (data.user) {
+        localStorage.setItem('nova_user', JSON.stringify(data.user));
+      }
+      setUser({ token: data.token, ...(data.user || {}) });
     }
     return data;
   };
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('nova_user');
     setUser(null);
   };
 

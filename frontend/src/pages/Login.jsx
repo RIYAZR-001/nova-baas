@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Login.css';
 
+const apiHost = (import.meta.env.VITE_API_URL || 'https://nova-baas.onrender.com').replace(/\/+$/, '');
+
 export default function Login() {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
@@ -26,11 +28,11 @@ export default function Login() {
       setSuccess('Authentication successful! Redirecting...');
       setTimeout(() => {
         navigate('/dashboard', { replace: true });
-      }, 1000);
+      }, 800);
     } catch (err) {
       setError(
-        err.response?.data?.message || 
-        err.response?.data?.error || 
+        err.response?.data?.message ||
+        err.response?.data?.error ||
         'Failed to connect to NOVA API'
       );
     } finally {
@@ -53,7 +55,7 @@ export default function Login() {
       <div className="auth-card">
         <div className="status-banner">
           <span className="status-dot online"></span>
-          <span className="status-text">Backend API Connected (Port 5000)</span>
+          <span className="status-text">Target API: {apiHost}</span>
         </div>
 
         {error && <div className="alert alert-error">{error}</div>}
@@ -66,7 +68,7 @@ export default function Login() {
               type="email"
               id="email"
               name="email"
-              placeholder="developer@nova.local"
+              placeholder="testuser@example.com"
               value={formData.email}
               onChange={handleChange}
               required

@@ -1,7 +1,13 @@
 import axios from 'axios';
 
+const rawBaseUrl = import.meta.env.VITE_API_URL || 'https://nova-baas.onrender.com';
+const normalizedBase = rawBaseUrl.replace(/\/+$/, '');
+const apiBaseUrl = normalizedBase.endsWith('/api')
+  ? normalizedBase
+  : `${normalizedBase}/api`;
+
 const API = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: apiBaseUrl,
 });
 
 API.interceptors.request.use((config) => {

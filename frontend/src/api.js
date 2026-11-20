@@ -1,12 +1,18 @@
 import axios from 'axios';
 
+const rawBaseUrl = import.meta.env.VITE_API_URL || 'https://nova-baas.onrender.com';
+const normalizedBase = rawBaseUrl.replace(/\/+$/, '');
+const apiBaseUrl = normalizedBase.endsWith('/api')
+  ? normalizedBase
+  : `${normalizedBase}/api`;
+
 const API = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: apiBaseUrl,
 });
 
 // Interceptor to attach Bearer Token to every outgoing request
 API.interceptors.request.use((config) => {
-  const token = localStorage.getItem('nova_token');
+  const token = localStorage.getItem('token') || localStorage.getItem('nova_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

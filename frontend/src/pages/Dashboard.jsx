@@ -2,6 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
+const rawBaseUrl = import.meta.env.VITE_API_URL || 'https://nova-baas.onrender.com';
+const normalizedBase = rawBaseUrl.replace(/\/+$/, '');
+const API_BASE = normalizedBase.endsWith('/api')
+  ? normalizedBase
+  : `${normalizedBase}/api`;
+
 const DEFAULT_ENTITIES = [
   { id: 'products', label: '📦 Products' },
   { id: 'users', label: '👤 Users' },
@@ -18,7 +24,7 @@ export default function Dashboard() {
   // Active collection entity
   const [entity, setEntity] = useState('products');
   const [customEntityInput, setCustomEntityInput] = useState('');
-  
+
   // Data & Upload states
   const [records, setRecords] = useState([]);
   const [statusMsg, setStatusMsg] = useState('');
@@ -39,7 +45,7 @@ export default function Dashboard() {
   const [fields, setFields] = useState([{ key: 'title', value: '' }, { key: 'description', value: '' }]);
 
   // Active token lookup fallback
-  const activeToken = token || localStorage.getItem('nova_token') || localStorage.getItem('token');
+  const activeToken = token || user?.token || localStorage.getItem('token') || localStorage.getItem('nova_token');
 
   useEffect(() => {
     if (entity === '_storage') {
@@ -55,10 +61,10 @@ export default function Dashboard() {
   const fetchRecords = async () => {
     try {
       setStatusMsg(`Fetching ${entity}...`);
-      const url = `http://localhost:5000/api/records/${entity}?page=${page}&limit=5&search=${encodeURIComponent(search)}`;
-      
+      const url = `${API_BASE}/records/${entity}?page=${page}&limit=5&search=${encodeURIComponent(search)}`;
+
       const res = await fetch(url, {
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${activeToken}`,
           'Content-Type': 'application/json'
         }
@@ -80,7 +86,7 @@ export default function Dashboard() {
   const fetchFiles = async () => {
     try {
       setStatusMsg('Fetching media files...');
-      const res = await fetch('http://localhost:5000/api/storage/files', {
+      const res = await fetch(`${API_BASE}/storage/files`, {
         headers: { 'Authorization': `Bearer ${activeToken}` }
       });
       const data = await res.json();
@@ -100,7 +106,7 @@ export default function Dashboard() {
   const fetchApiKeys = async () => {
     try {
       setStatusMsg('Fetching API keys...');
-      const res = await fetch('http://localhost:5000/api/keys', {
+      const res = await fetch(`${API_BASE}/keys`, {
         headers: { 'Authorization': `Bearer ${activeToken}` }
       });
       const data = await res.json();
@@ -131,7 +137,7 @@ export default function Dashboard() {
     setStatusMsg('Uploading file...');
 
     try {
-      const res = await fetch('http://localhost:5000/api/storage/upload', {
+      const res = await fetch(`${API_BASE}/storage/upload`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${activeToken}` },
         body: formData
@@ -162,7 +168,7 @@ export default function Dashboard() {
 
     try {
       setStatusMsg('Generating new API key...');
-      const res = await fetch('http://localhost:5000/api/keys', {
+      const res = await fetch(`${API_BASE}/keys/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -173,7 +179,11 @@ export default function Dashboard() {
       const data = await res.json();
 
       if (res.ok) {
-        setGeneratedKey(data.apiKey || data.key || data.token);
+        const createdKey =
+          data.apiKey?.key_value ||
+          data.key_value ||
+          (typeof data.apiKey === 'string' ? data.apiKey : data.key || data.token || '');
+        setGeneratedKey(createdKey);
         setKeyLabel('');
         setStatusMsg('New API key generated successfully!');
         fetchApiKeys();
@@ -232,10 +242,10 @@ export default function Dashboard() {
     }
 
     const isEdit = Boolean(editingId);
-    const endpoint = isEdit 
-      ? `http://localhost:5000/api/records/${entity}/${editingId}`
-      : `http://localhost:5000/api/records/${entity}`;
-    
+    const endpoint = isEdit
+      ? `${API_BASE}/records/${entity}/${editingId}`
+      : `${API_BASE}/records/${entity}`;
+
     const method = isEdit ? 'PUT' : 'POST';
 
     try {
@@ -264,7 +274,7 @@ export default function Dashboard() {
   const handleStartEdit = (rec) => {
     setEditingId(rec.id);
     const recData = typeof rec.data === 'string' ? JSON.parse(rec.data) : (rec.data || rec);
-    
+
     const loadedFields = Object.entries(recData).map(([k, v]) => ({
       key: k,
       value: String(v)
@@ -277,9 +287,9 @@ export default function Dashboard() {
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this item?')) return;
 
-    let deleteEndpoint = `http://localhost:5000/api/records/${entity}/${id}`;
+    let deleteEndpoint = `${API_BASE}/records/${entity}/${id}`;
     if (entity === '_apikeys') {
-      deleteEndpoint = `http://localhost:5000/api/keys/${id}`;
+      deleteEndpoint = `${API_BASE}/keys/${id}`;
     }
 
     try {
@@ -290,7 +300,7 @@ export default function Dashboard() {
 
       if (res.ok) {
         setStatusMsg('Item deleted.');
-        if (entity === '_storage') fetchFiles(); 
+        if (entity === '_storage') fetchFiles();
         else if (entity === '_apikeys') fetchApiKeys();
         else fetchRecords();
       } else {
@@ -314,7 +324,7 @@ export default function Dashboard() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#0f172a', color: '#fff', fontFamily: 'sans-serif' }}>
-      
+
       {/* SIDEBAR NAVIGATION */}
       <aside style={{ width: '240px', backgroundColor: '#1e293b', borderRight: '1px solid #334155', padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div>
@@ -355,11 +365,11 @@ export default function Dashboard() {
         <form onSubmit={handleCustomEntitySubmit} style={{ marginTop: 'auto' }}>
           <span style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 'bold' }}>Custom Entity</span>
           <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="e.g. logs"
-              value={customEntityInput} 
-              onChange={(e) => setCustomEntityInput(e.target.value)} 
+              value={customEntityInput}
+              onChange={(e) => setCustomEntityInput(e.target.value)}
               style={{ width: '100%', padding: '6px 8px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff', fontSize: '0.85rem' }}
             />
             <button type="submit" style={{ padding: '6px 10px', backgroundColor: '#334155', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
@@ -371,7 +381,7 @@ export default function Dashboard() {
 
       {/* MAIN CONTENT AREA */}
       <main style={{ flex: 1, padding: '30px', maxWidth: '1000px', margin: '0 auto' }}>
-        
+
         {/* HEADER */}
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', paddingBottom: '15px', borderBottom: '1px solid #334155' }}>
           <div>
@@ -382,8 +392,8 @@ export default function Dashboard() {
               User: {user?.email || localStorage.getItem('nova_user_email') || 'Logged In User'}
             </span>
           </div>
-          <button 
-            onClick={() => { if (logout) logout(); navigate('/login'); }} 
+          <button
+            onClick={() => { if (logout) logout(); navigate('/login'); }}
             style={{ padding: '8px 16px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
           >
             Logout
@@ -402,11 +412,11 @@ export default function Dashboard() {
           <section style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '8px', marginBottom: '30px', border: '1px solid #334155' }}>
             <h3 style={{ marginTop: 0 }}>Generate Developer API Key</h3>
             <form onSubmit={handleGenerateApiKey} style={{ display: 'flex', gap: '10px' }}>
-              <input 
-                type="text" 
-                placeholder="Key Label (e.g. Mobile Client, Staging App)" 
-                value={keyLabel} 
-                onChange={(e) => setKeyLabel(e.target.value)} 
+              <input
+                type="text"
+                placeholder="Key Label (e.g. Mobile Client, Staging App)"
+                value={keyLabel}
+                onChange={(e) => setKeyLabel(e.target.value)}
                 style={{ flex: 1, padding: '10px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }}
               />
               <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
@@ -428,13 +438,13 @@ export default function Dashboard() {
           <section style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '8px', marginBottom: '30px', border: '1px solid #334155' }}>
             <h3 style={{ marginTop: 0 }}>Upload New Asset</h3>
             <form onSubmit={handleFileUpload} style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-              <input 
-                type="file" 
+              <input
+                type="file"
                 onChange={(e) => setSelectedFile(e.target.files[0])}
                 style={{ padding: '8px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '4px', color: '#fff', flex: 1 }}
               />
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 disabled={uploading}
                 style={{ padding: '10px 20px', backgroundColor: '#0284c7', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
               >
@@ -451,24 +461,24 @@ export default function Dashboard() {
 
             {fields.map((field, idx) => (
               <div key={idx} style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                <input 
-                  type="text" 
-                  placeholder="Key (e.g. title, price)" 
-                  value={field.key} 
-                  onChange={(e) => handleFieldChange(idx, 'key', e.target.value)} 
+                <input
+                  type="text"
+                  placeholder="Key (e.g. title, price)"
+                  value={field.key}
+                  onChange={(e) => handleFieldChange(idx, 'key', e.target.value)}
                   style={{ flex: 1, padding: '10px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }}
                 />
-                <input 
-                  type="text" 
-                  placeholder="Value" 
-                  value={field.value} 
-                  onChange={(e) => handleFieldChange(idx, 'value', e.target.value)} 
+                <input
+                  type="text"
+                  placeholder="Value"
+                  value={field.value}
+                  onChange={(e) => handleFieldChange(idx, 'value', e.target.value)}
                   style={{ flex: 2, padding: '10px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }}
                 />
                 {fields.length > 1 && (
-                  <button 
-                    type="button" 
-                    onClick={() => handleRemoveField(idx)} 
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveField(idx)}
                     style={{ padding: '0 12px', backgroundColor: '#dc2626', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                   >
                     ✕
@@ -478,23 +488,23 @@ export default function Dashboard() {
             ))}
 
             <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-              <button 
-                type="button" 
-                onClick={handleAddField} 
+              <button
+                type="button"
+                onClick={handleAddField}
                 style={{ padding: '8px 14px', backgroundColor: '#334155', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
               >
                 + Add Property
               </button>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 style={{ padding: '8px 20px', backgroundColor: editingId ? '#eab308' : '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
               >
                 {editingId ? 'Update Record' : 'Add Record'}
               </button>
               {editingId && (
-                <button 
-                  type="button" 
-                  onClick={resetForm} 
+                <button
+                  type="button"
+                  onClick={resetForm}
                   style={{ padding: '8px 14px', backgroundColor: '#64748b', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                 >
                   Cancel
@@ -508,18 +518,18 @@ export default function Dashboard() {
         <section style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '8px', border: '1px solid #334155' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <h3 style={{ margin: 0 }}>
-              {entity === '_storage' 
-                ? 'Uploaded Files & Assets' 
-                : entity === '_apikeys' 
-                ? 'Active API Keys' 
+              {entity === '_storage'
+                ? 'Uploaded Files & Assets'
+                : entity === '_apikeys'
+                ? 'Active API Keys'
                 : `Stored Records (${pagination.totalRecords !== undefined ? pagination.totalRecords : records.length})`}
             </h3>
             {entity !== '_storage' && entity !== '_apikeys' && (
-              <input 
-                type="text" 
-                placeholder="Search records..." 
-                value={search} 
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }} 
+              <input
+                type="text"
+                placeholder="Search records..."
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff', width: '200px' }}
               />
             )}
@@ -542,14 +552,14 @@ export default function Dashboard() {
                       <span style={{ fontSize: '0.75rem', color: '#38bdf8', fontWeight: 'bold' }}>
                         {isApiKey ? `KEY ID #${rec.id}` : `RECORD #${rec.id}`}
                       </span>
-                      
+
                       {isApiKey ? (
                         <div style={{ marginTop: '5px' }}>
                           <p style={{ margin: '0 0 4px 0', fontWeight: 'bold', fontSize: '1rem', color: '#f8fafc' }}>
                             {rec.name || rec.label || recData.name || 'API Key'}
                           </p>
                           <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                            Prefix: <code style={{ color: '#38bdf8' }}>{rec.key_prefix || rec.prefix || 'nova_...'}</code> | Created: {new Date(rec.created_at || Date.now()).toLocaleDateString()}
+                            Key: <code style={{ color: '#38bdf8' }}>{rec.key_value || rec.key_prefix || rec.prefix || 'nova_...'}</code> | Created: {new Date(rec.created_at || Date.now()).toLocaleDateString()}
                           </span>
                         </div>
                       ) : isMediaFile ? (
@@ -592,9 +602,9 @@ export default function Dashboard() {
           {/* PAGINATION CONTROLS */}
           {entity !== '_storage' && entity !== '_apikeys' && pagination.totalPages > 1 && (
             <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px' }}>
-              <button 
-                disabled={page <= 1} 
-                onClick={() => setPage(page - 1)} 
+              <button
+                disabled={page <= 1}
+                onClick={() => setPage(page - 1)}
                 style={{ padding: '6px 12px', backgroundColor: page <= 1 ? '#334155' : '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: page <= 1 ? 'not-allowed' : 'pointer' }}
               >
                 Previous
@@ -602,9 +612,9 @@ export default function Dashboard() {
               <span style={{ fontSize: '0.9rem', color: '#94a3b8' }}>
                 Page {pagination.page} of {pagination.totalPages}
               </span>
-              <button 
-                disabled={page >= pagination.totalPages} 
-                onClick={() => setPage(page + 1)} 
+              <button
+                disabled={page >= pagination.totalPages}
+                onClick={() => setPage(page + 1)}
                 style={{ padding: '6px 12px', backgroundColor: page >= pagination.totalPages ? '#334155' : '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: page >= pagination.totalPages ? 'not-allowed' : 'pointer' }}
               >
                 Next
