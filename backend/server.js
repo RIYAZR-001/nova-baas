@@ -60,7 +60,7 @@ const authLimiter = rateLimit({
 app.use('/api', globalApiLimiter);
 app.use('/api/auth', authLimiter);
 
-// Auto-create users and records tables on server startup with automatic retries
+// Auto-create users, records, and api_keys tables on server startup with automatic retries
 const initializeDatabase = async (retries = 5, delay = 3000) => {
   while (retries > 0) {
     try {
@@ -89,6 +89,17 @@ const initializeDatabase = async (retries = 5, delay = 3000) => {
         );
       `);
       console.log('[NOVA DB] "records" table verified/created successfully.');
+
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS api_keys (
+          id SERIAL PRIMARY KEY,
+          user_id INT REFERENCES users(id) ON DELETE CASCADE,
+          key_value TEXT UNIQUE NOT NULL,
+          name VARCHAR(255) NOT NULL DEFAULT 'Default Key',
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      console.log('[NOVA DB] "api_keys" table verified/created successfully.');
       return;
     } catch (err) {
       retries -= 1;
