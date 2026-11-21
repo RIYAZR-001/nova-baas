@@ -3,7 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Login.css';
 
-const apiHost = (import.meta.env.VITE_API_URL || 'https://nova-baas.onrender.com').replace(/\/+$/, '');
+const apiHost = (
+  import.meta.env.VITE_API_URL || 'https://nova-baas.onrender.com'
+).replace(/\/+$/, '');
 
 export default function Login() {
   const [formData, setFormData] = useState({ email: '', password: '' });

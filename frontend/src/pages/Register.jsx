@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
+import API from '../api/axios';
 import './Login.css';
 
 export default function Register() {
@@ -21,13 +21,13 @@ export default function Register() {
     setSuccess('');
 
     try {
-      await axios.post('http://localhost:5000/api/auth/register', formData);
+      await API.post('/auth/register', formData);
       setSuccess('Account created successfully! Redirecting to login...');
       setTimeout(() => navigate('/login'), 1500);
     } catch (err) {
       setError(
-        err.response?.data?.message || 
-        err.response?.data?.error || 
+        err.response?.data?.message ||
+        err.response?.data?.error ||
         'Registration failed'
       );
     } finally {
