@@ -41,8 +41,13 @@ app.use(cors({
 
 app.use(express.json());
 
-// 2. Security Headers via Helmet
-app.use(helmet({ contentSecurityPolicy: false }));
+// 2. Security Headers via Helmet (allow cross-origin loading of /uploads images)
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' }
+  })
+);
 
 // 3. Rate Limiting Guards
 const globalApiLimiter = rateLimit({
@@ -115,8 +120,15 @@ const initializeDatabase = async (retries = 5, delay = 3000) => {
 
 initializeDatabase();
 
-// Serve uploaded media files publicly
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Serve uploaded media files publicly with explicit cross-origin header
+app.use(
+  '/uploads',
+  (req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+  },
+  express.static(path.join(__dirname, 'uploads'))
+);
 
 // Interactive Swagger Docs UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));

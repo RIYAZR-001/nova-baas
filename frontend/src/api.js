@@ -6,13 +6,27 @@ const apiBaseUrl = normalizedBase.endsWith('/api')
   ? normalizedBase
   : `${normalizedBase}/api`;
 
+const DEFAULT_API_KEY =
+  import.meta.env.VITE_NOVA_API_KEY ||
+  'nova_477771ef75f38992c40be966140320f53b6d6a1bc6962331';
+
 const API = axios.create({
   baseURL: apiBaseUrl,
 });
 
-// Interceptor to attach Bearer Token to every outgoing request
+// Interceptor to attach API Key and Bearer Token to every outgoing request
 API.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token') || localStorage.getItem('nova_token');
+  const apiKey =
+    (typeof window !== 'undefined' && window.localStorage.getItem('nova_api_key')?.trim()) ||
+    DEFAULT_API_KEY;
+  if (apiKey) {
+    config.headers['x-api-key'] = apiKey;
+  }
+
+  const token =
+    (typeof window !== 'undefined' &&
+      (window.localStorage.getItem('nova_token') || window.localStorage.getItem('token'))) ||
+    null;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
