@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Zap } from 'lucide-react';
 import API from '../api/axios';
 import './Login.css';
 
@@ -36,69 +37,75 @@ export default function Register() {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-header">
-        <div className="logo-badge">
-          <span className="logo-icon">⚡</span>
-          <span className="logo-text">NOVA</span>
-          <span className="environment-tag">BaaS v1.0</span>
+    <div className="nova-shell">
+      <div className="nova-shell-content auth-page">
+        <div className="auth-container">
+          <div className="auth-header">
+            <div className="logo-badge">
+              <span className="logo-mark">
+                <Zap size={15} strokeWidth={1.75} />
+              </span>
+              <span className="logo-text">NOVA</span>
+              <span className="environment-tag">BaaS v1.0</span>
+            </div>
+            <h1>Create an Account</h1>
+            <p>Set up your developer profile on NOVA</p>
+          </div>
+
+          <div className="auth-card">
+            {error && <div className="alert alert-error">{error}</div>}
+            {success && <div className="alert alert-success">{success}</div>}
+
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label htmlFor="name">Full Name</label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  placeholder="Sarithala Riyaz"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="email">Email address</label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  placeholder="developer@nova.local"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="password">Password</label>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  placeholder="••••••••••••"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <button type="submit" className="btn-primary" disabled={loading}>
+                {loading ? 'Creating Account...' : 'Register Account'}
+              </button>
+            </form>
+          </div>
+
+          <div className="auth-footer">
+            <p>Already have an account? <Link to="/login">Sign in</Link></p>
+          </div>
         </div>
-        <h1>Create an Account</h1>
-        <p>Set up your developer profile on NOVA</p>
-      </div>
-
-      <div className="auth-card">
-        {error && <div className="alert alert-error">{error}</div>}
-        {success && <div className="alert alert-success">{success}</div>}
-
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="name">Full Name</label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              placeholder="Sarithala Riyaz"
-              value={formData.name}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="email">Email address</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              placeholder="developer@nova.local"
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              placeholder="••••••••••••"
-              value={formData.password}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Creating Account...' : 'Register Account'}
-          </button>
-        </form>
-      </div>
-
-      <div className="auth-footer">
-        <p>Already have an account? <Link to="/login">Sign in</Link></p>
       </div>
     </div>
   );
